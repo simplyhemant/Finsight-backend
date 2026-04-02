@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
         name = "financial_records",
         indexes = {
                 @Index(name = "idx_record_type",     columnList = "type"),
-                @Index(name = "idx_record_category", columnList = "category"),
+                @Index(name = "idx_record_category", columnList = "category_id"),
                 @Index(name = "idx_record_date",     columnList = "date"),
                 @Index(name = "idx_record_deleted",  columnList = "deleted"),
                 @Index(name = "idx_record_user",     columnList = "created_by_id")
@@ -39,8 +39,9 @@ public class FinancialRecord {
     @Column(nullable = false)
     private TransactionType type;
 
-    @Column(nullable = false)
-    private String category;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
     @Column(nullable = false)
     private LocalDate date;

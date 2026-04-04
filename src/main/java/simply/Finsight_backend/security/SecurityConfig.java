@@ -1,0 +1,67 @@
+// FIXED SecurityConfig — add exceptionHandling + authEntryPoint
+package simply.Finsight_backend.security;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+@Configuration
+@EnableMethodSecurity
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+    private final JwtTokenValidator         jwtTokenValidator;
+    private final CustomAccessDeniedHandler accessDeniedHandler;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http)
+            throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**").permitAll()
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().authenticated())
+
+                // ── THIS IS WHAT YOU ARE MISSING ──────────────────────
+                .exceptionHandling(ex -> ex
+
+                        // 401 — no token / invalid token (not authenticated)
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.getWriter().write("""
+                                {
+                                  "success": false,
+                                  "status": 401,
+                                  "error": "Unauthorized",
+                                  "message": "Authentication required. Please login first.",
+                                  "path": "%s"
+                                }
+                                """.formatted(request.getRequestURI()));
+                        })
+
+                        // 403 — authenticated but wrong role
+                        .accessDeniedHandler(accessDeniedHandler)
+                )
+                // ──────────────────────────────────────────────────────
+
+                .addFilterBefore(jwtTokenValidator,
+                        UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+}

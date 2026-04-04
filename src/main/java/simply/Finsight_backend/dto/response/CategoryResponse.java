@@ -16,4 +16,5 @@ public class CategoryResponse {
     private String name;
     private TransactionType type;
     private boolean active;
+    private Long createdById;
 }

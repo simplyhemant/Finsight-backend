@@ -15,14 +15,18 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FinancialRecordResponse {
-
     private Long id;
     private BigDecimal amount;
     private TransactionType type;
-    private String category;
+
+    private Long categoryId;
+    private String categoryName;
+
     private LocalDate date;
     private String description;
-    private UserSummaryResponse createdBy;
+
+    private Long createdById;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

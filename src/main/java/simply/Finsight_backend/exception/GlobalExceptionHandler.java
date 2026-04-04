@@ -1,132 +1,111 @@
 package simply.Finsight_backend.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.*;
+import simply.Finsight_backend.dto.response.ApiResponse;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private ErrorResponse buildErrorResponse(
-            Exception ex,
-            HttpStatus status,
-            HttpServletRequest request
-    ) {
-        return new ErrorResponse(
-                LocalDateTime.now(),
+    private ResponseEntity<ApiResponse<Void>> buildResponse(HttpStatus status, String error, String message, HttpServletRequest request) {
+        ApiResponse<Void> response = ApiResponse.error(
                 status.value(),
-                status.getReasonPhrase(),
-                ex.getMessage(),
-                request.getRequestURI(),
-                null // no field errors here
+                error,
+                message,
+                request.getRequestURI()
         );
+        return new ResponseEntity<>(response, status);
+    }
+
+    // Handles @PreAuthorize exceptions if they bubble up to the controller
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.FORBIDDEN, "Forbidden", ex.getMessage(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodValidation(
-            MethodArgumentNotValidException ex,
-            HttpServletRequest request
-    ) {
-
+    public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
         Map<String, String> fieldErrors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(err ->
+                fieldErrors.put(err.getField(), err.getDefaultMessage()));
 
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                fieldErrors.put(error.getField(), error.getDefaultMessage())
-        );
-
-        ErrorResponse response = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                "Validation Error",
-                "Invalid input data",
-                request.getRequestURI(),
-                fieldErrors
-        );
-
+        ApiResponse<Void> response = ApiResponse.<Void>builder()
+                .success(false)
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Validation Error")
+                .message("Invalid input data")
+                .fieldErrors(fieldErrors)
+                .path(request.getRequestURI())
+                .build();
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(
-            ValidationException ex,
-            HttpServletRequest request
-    ) {
-        return new ResponseEntity<>(
-                buildErrorResponse(ex, HttpStatus.BAD_REQUEST, request),
-                HttpStatus.BAD_REQUEST
-        );
-    }
-
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ErrorResponse> handleBusinessException(
-            BusinessException ex,
-            HttpServletRequest request
-    ) {
-        return new ResponseEntity<>(
-                buildErrorResponse(ex, HttpStatus.BAD_REQUEST, request),
-                HttpStatus.BAD_REQUEST
-        );
-    }
-
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(
-            ResourceNotFoundException ex,
-            HttpServletRequest request
-    ) {
-        return new ResponseEntity<>(
-                buildErrorResponse(ex, HttpStatus.NOT_FOUND, request),
-                HttpStatus.NOT_FOUND
-        );
+    public ResponseEntity<ApiResponse<Void>> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage(), request);
     }
 
-    @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicate(
-            DuplicateResourceException ex,
-            HttpServletRequest request
-    ) {
-        return new ResponseEntity<>(
-                buildErrorResponse(ex, HttpStatus.CONFLICT, request),
-                HttpStatus.CONFLICT
-        );
-    }
-
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ErrorResponse> handleAuth(
-            AuthenticationException ex,
-            HttpServletRequest request
-    ) {
-        return new ResponseEntity<>(
-                buildErrorResponse(ex, HttpStatus.UNAUTHORIZED, request),
-                HttpStatus.UNAUTHORIZED
-        );
-    }
-
-
-    @ExceptionHandler(AuthorizationException.class)
-    public ResponseEntity<ErrorResponse> handleAuthorization(
-            AuthorizationException ex,
-            HttpServletRequest request
-    ) {
-        return new ResponseEntity<>(
-                buildErrorResponse(ex, HttpStatus.FORBIDDEN, request),
-                HttpStatus.FORBIDDEN
-        );
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "Database Error", "Integrity violation: check required fields.", request);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneral(
-            Exception ex,
-            HttpServletRequest request
-    ) {
-        return new ResponseEntity<>(
-                buildErrorResponse(ex, HttpStatus.INTERNAL_SERVER_ERROR, request),
-                HttpStatus.INTERNAL_SERVER_ERROR
-        );
+    public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Error", "An unexpected error occurred", request);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthentication(
+            AuthenticationException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNAUTHORIZED,
+                "Unauthorized", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(AuthorizationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthorization(
+            AuthorizationException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.FORBIDDEN,
+                "Forbidden", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusiness(
+            BusinessException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST,
+                "Business Error", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDuplicate(
+            DuplicateResourceException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT,
+                "Duplicate Resource", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleValidationException(
+            ValidationException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST,
+                "Validation Error", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex,
+            HttpServletRequest request) {
+
+        String message = String.format("The parameter '%s' has an invalid value: '%s'. Ensure dates follow the YYYY-MM-DD format and are valid calendar dates.",
+                ex.getName(), ex.getValue());
+
+        return buildResponse(HttpStatus.BAD_REQUEST, "Invalid Parameter", message, request);
     }
 }

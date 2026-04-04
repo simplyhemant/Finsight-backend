@@ -18,8 +18,8 @@ public class CreateRecordRequest {
     @NotNull(message = "Type is required")
     private TransactionType type;
 
-    @NotBlank(message = "Category is required")
-    private String category;
+    @NotNull(message = "Category is required")
+    private Long categoryId;
 
     @NotNull(message = "Date is required")
     private LocalDate date;

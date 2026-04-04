@@ -54,6 +54,6 @@ public class User {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "createdBy", fetch = FetchType.LAZY)
     private List<FinancialRecord> financialRecords;
 }

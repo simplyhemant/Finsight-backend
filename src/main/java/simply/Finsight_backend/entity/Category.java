@@ -8,7 +8,13 @@ import simply.Finsight_backend.enums.TransactionType;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "categories")
+@Table(
+        name = "categories",
+        indexes = {
+                @Index(name = "idx_category_type", columnList = "type"),
+                @Index(name = "idx_category_active", columnList = "active")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -29,6 +35,10 @@ public class Category {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id", nullable = false)
+    private User createdBy;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

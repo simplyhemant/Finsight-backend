@@ -46,7 +46,7 @@ public class FinancialRecord {
     @Column(nullable = false)
     private LocalDate date;
 
-    @Column(length = 500)
+    @Column(length = 200)
     private String description;
 
     @Column(nullable = false)

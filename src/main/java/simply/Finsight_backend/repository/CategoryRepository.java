@@ -1,6 +1,7 @@
 package simply.Finsight_backend.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import simply.Finsight_backend.entity.Category;
 import simply.Finsight_backend.enums.TransactionType;
@@ -11,25 +12,14 @@ import java.util.Optional;
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 
-    // ─── Finders ─────────────────────────────────────────────────
-
-    Optional<Category> findByNameIgnoreCase(String name);
-
     boolean existsByNameIgnoreCase(String name);
 
-    // ─── Active Categories ────────────────────────────────────────
-
+    @Query("SELECT c FROM Category c LEFT JOIN FETCH c.createdBy WHERE c.active = true")
     List<Category> findByActiveTrue();
 
-//    List<Category> findByActiveFalse();
-
-    // ─── By Type ──────────────────────────────────────────────────
-
+    @Query("SELECT c FROM Category c LEFT JOIN FETCH c.createdBy " +
+            "WHERE c.type = :type AND c.active = true")
     List<Category> findByTypeAndActiveTrue(TransactionType type);
 
-//    List<Category> findByType(TransactionType type);
 
-    // ─── Active + Type Combined ───────────────────────────────────
-
-//    boolean existsByNameIgnoreCaseAndType(String name, TransactionType type);
 }

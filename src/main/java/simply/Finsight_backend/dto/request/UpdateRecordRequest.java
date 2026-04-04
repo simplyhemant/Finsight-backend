@@ -15,13 +15,10 @@ public class UpdateRecordRequest {
     @Digits(integer = 13, fraction = 2, message = "Invalid amount format")
     private BigDecimal amount;
 
-    @NotNull(message = "Type is required")
     private TransactionType type;
 
-    @NotBlank(message = "Category is required")
-    private String category;
+    private Long categoryId;
 
-    @NotNull(message = "Date is required")
     private LocalDate date;
 
     @Size(max = 500, message = "Description cannot exceed 500 characters")

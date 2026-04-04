@@ -1,0 +1,62 @@
+#services:
+#  db:
+#    image: postgres:15-alpine
+#    container_name: finsight-db
+#    environment:
+#      POSTGRES_DB: finsight
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: root123
+#    ports:
+#      - "5434:5432"
+#    volumes:
+#      - finsight_data:/var/lib/postgresql/data
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U postgres"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#
+#volumes:
+#  finsight_data:
+#
+#
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: finsight-db
+    environment:
+      POSTGRES_DB: finsight
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root123
+    ports:
+      - "5434:5432"
+    volumes:
+      - finsight_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d finsight"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - finsight-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: finsight-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5051:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - finsight-network
+
+volumes:
+  finsight_data:
+
+networks:
+  finsight-network:

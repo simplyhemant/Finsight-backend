@@ -141,12 +141,11 @@ The application will start on `http://localhost:8080`.
 
 ## 🔮 Future Improvements
 1. **Caching (Redis)**: Implement caching layer for the dashboard summary endpoints since financial aggregations can be heavy on the database.
-2. **API Documentation**: Integrate Swagger / OpenAPI for an interactive UI mapping of all endpoints.
-3. **Automated Testing**: Expand the test suite by adding extensive Unit Test (JUnit/Mockito) and Integration tests.
-4. **Rate Limiting (Bucket4j)**: Prevent brute-force attacks and abuse of analytical APIs.
+2. **Automated Testing**: Expand the test suite by adding extensive Unit Test (JUnit/Mockito) and Integration tests.
+3. **Rate Limiting (Bucket4j)**: Prevent brute-force attacks and abuse of analytical APIs.
 
 ---
 
 ## 👨‍💻 Author
 **Hemant**
-Backend Developer Intern Candidate
+Backend Developer

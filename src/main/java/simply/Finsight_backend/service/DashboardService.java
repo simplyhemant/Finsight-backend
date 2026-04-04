@@ -14,22 +14,22 @@ public interface DashboardService {
 
     DashboardSummaryResponse getSummary();
 
-    // ─── Category Totals ──────────────────────────────────────────
+    // ─── Category Totals ───
     List<CategoryTotalResponse> getCategoryWiseTotals();
     List<CategoryTotalResponse> getCategoryWiseTotalsByType(TransactionType type);
 
-    // ─── Trends ───────────────────────────────────────────────────
+    // ─── Trends ───
     List<MonthlyTrendResponse> getMonthlyTrends(int year);
     List<WeeklyTrendResponse>  getWeeklyTrends(int year);
 
-    // ─── Recent Activity ──────────────────────────────────────────
+    // ─── Recent Activity ──
     List<RecentActivityResponse> getRecentActivity(int limit);
 
-    // ─── Top Categories ───────────────────────────────────────────
+    // ─── Top Categories ───
     List<CategoryTotalResponse> getTopExpenseCategories(int limit);
     List<CategoryTotalResponse> getTopIncomeCategories(int limit);
 
-    // ─── Date Range Summary ───────────────────────────────────────
+    // ─── Date Range Summary ────
     DashboardSummaryResponse getSummaryByDateRange(LocalDate startDate,
                                                    LocalDate endDate);
 }

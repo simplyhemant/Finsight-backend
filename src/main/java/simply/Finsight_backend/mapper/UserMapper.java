@@ -8,7 +8,6 @@ import simply.Finsight_backend.enums.UserStatus;
 
 public class UserMapper {
 
-    // 🔹 Entity → DTO
     public static UserResponse toResponse(User user) {
 
         if (user == null) return null;
@@ -24,15 +23,14 @@ public class UserMapper {
                 .build();
     }
 
-    // 🔹 RegisterRequest → Entity
-    public static User toEntity(RegisterRequest request, String encodedPassword) {
-
-        return User.builder()
-                .name(request.getName())
-                .email(request.getEmail())
-                .password(encodedPassword)
-                .role(Role.VIEWER)   // default role
-                .status(UserStatus.ACTIVE)   // default status
-                .build();
-    }
+//    public static User toEntity(RegisterRequest request, String encodedPassword) {
+//
+//        return User.builder()
+//                .name(request.getName())
+//                .email(request.getEmail())
+//                .password(encodedPassword)
+//                .role(Role.VIEWER)
+//                .status(UserStatus.ACTIVE)
+//                .build();
+//    }
 }

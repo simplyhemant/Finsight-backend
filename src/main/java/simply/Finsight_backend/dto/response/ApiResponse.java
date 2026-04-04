@@ -9,7 +9,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL) // Best practice: hides null fields on success
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
 
     private boolean success;
@@ -17,14 +17,13 @@ public class ApiResponse<T> {
     private T data;
 
     private String error;
-    private int status; // Repopulated correctly for both success and error
+    private int status;
     private String path;
     private Map<String, String> fieldErrors;
 
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    // Success Factory: Now includes status code
     public static <T> ApiResponse<T> success(String message, T data, int status) {
         return ApiResponse.<T>builder()
                 .success(true)

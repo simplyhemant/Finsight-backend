@@ -1,6 +1,7 @@
 package simply.Finsight_backend.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,101 +20,152 @@ import simply.Finsight_backend.service.UserService;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
-    /**
-     * Requirement 1: Internal helper to verify if the requesting user is ACTIVE.
-     */
-    private void validateActiveStatus(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
-
-        if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new BusinessException("Access Denied: Your account is " + user.getStatus() + ". Action restricted.");
-        }
-    }
-
-    // --- Admin Operations (Usually triggered by an Admin, so we check Admin's status) ---
+    // ─── Get All Users ────────────────────────────────────────────
 
     @Override
     public Page<UserResponse> getAllUsers(Pageable pageable) {
-        return userRepository.findAll(pageable).map(UserMapper::toResponse);
+        log.info("Fetching all users");
+        return userRepository.findAll(pageable)
+                .map(UserMapper::toResponse);
     }
+
+    // ─── Get User By ID ───────────────────────────────────────────
 
     @Override
     public UserResponse getUserById(Long userId) {
+        log.info("Fetching user ID: {}", userId);
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found with id: " + userId));
         return UserMapper.toResponse(user);
     }
+
+    // ─── Update User Status ───────────────────────────────────────
 
     @Override
     @Transactional
     public UserResponse updateUserStatus(Long userId, UserStatus status) {
-        // We don't necessarily check the target user's status here,
-        // because we are changing it. But the ADMIN performing this must be active.
+        log.info("Updating status for user ID: {} to {}", userId, status);
+
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found with id: " + userId));
 
         if (user.getStatus() == status) {
-            throw new BusinessException("User already has status: " + status);
+            throw new BusinessException(
+                    "User already has status: " + status);
         }
 
         user.setStatus(status);
+        // dirty checking saves automatically
         return UserMapper.toResponse(user);
     }
+
+    // ─── Update User Role ─────────────────────────────────────────
 
     @Override
     @Transactional
     public UserResponse updateUserRole(Long userId, Role role) {
+        log.info("Updating role for user ID: {} to {}", userId, role);
+
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found with id: " + userId));
 
         if (user.getRole() == role) {
-            throw new BusinessException("User already has role: " + role);
+            throw new BusinessException(
+                    "User already has role: " + role);
         }
 
         user.setRole(role);
+        // dirty checking saves automatically
         return UserMapper.toResponse(user);
     }
 
-    // --- Profile Operations ---
+    // ─── Search Users ─────────────────────────────────────────────
+
+    @Override
+    public Page<UserResponse> searchUsers(String keyword, Pageable pageable) {
+        log.info("Searching users with keyword: {}", keyword);
+
+        if (keyword == null || keyword.isBlank()) {
+            return userRepository.findAll(pageable)
+                    .map(UserMapper::toResponse);
+        }
+        return userRepository.searchByNameOrEmail(keyword.trim(), pageable)
+                .map(UserMapper::toResponse);
+    }
+
+    // ─── Get Users By Status ──────────────────────────────────────
+
+    @Override
+    public Page<UserResponse> getUsersByStatus(UserStatus status,
+                                               Pageable pageable) {
+        log.info("Filtering users by status: {}", status);
+        return userRepository.findByStatus(status, pageable)
+                .map(UserMapper::toResponse);
+    }
+
+    // ─── Get Users By Role ────────────────────────────────────────
+
+    @Override
+    public Page<UserResponse> getUsersByRole(Role role, Pageable pageable) {
+        log.info("Filtering users by role: {}", role);
+        return userRepository.findByRole(role, pageable)
+                .map(UserMapper::toResponse);
+    }
+
+    // ─── Get Current User Profile ─────────────────────────────────
 
     @Override
     public UserResponse getCurrentUserProfile(String email) {
+        log.info("Fetching profile for: {}", email);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
-
-        // Note: We allow users to see their profile even if INACTIVE
-        // so they can see their status, but you can add validateActiveStatus(email)
-        // here if you want total lockout.
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found: " + email));
         return UserMapper.toResponse(user);
     }
 
+    // ─── Update Current User Profile ──────────────────────────────
+
     @Override
     @Transactional
-    public UserResponse updateCurrentUser(String email, UpdateUserRequest request) {
-        // Requirement 1: An INACTIVE user cannot update their own profile details.
-        validateActiveStatus(email);
+    public UserResponse updateCurrentUser(String email,
+                                          UpdateUserRequest request) {
+        log.info("Updating profile for: {}", email);
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found: " + email));
+
+        // block inactive users from updating profile
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new BusinessException(
+                    "Account is " + user.getStatus()
+                            + ". Cannot update profile.");
+        }
 
         boolean isUpdated = false;
 
+        // update name if provided
         if (request.getName() != null && !request.getName().isBlank()) {
             user.setName(request.getName().trim());
             isUpdated = true;
         }
 
+        // update email if provided and different
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             String newEmail = request.getEmail().trim().toLowerCase();
             if (!newEmail.equalsIgnoreCase(user.getEmail())) {
                 if (userRepository.existsByEmail(newEmail)) {
-                    throw new DuplicateResourceException("Email already in use: " + newEmail);
+                    throw new DuplicateResourceException(
+                            "Email already in use: " + newEmail);
                 }
                 user.setEmail(newEmail);
                 isUpdated = true;
@@ -121,28 +173,11 @@ public class UserServiceImpl implements UserService {
         }
 
         if (!isUpdated) {
-            throw new BusinessException("No valid fields provided for update");
+            throw new BusinessException(
+                    "No valid fields provided for update");
         }
 
+        // dirty checking saves automatically
         return UserMapper.toResponse(user);
-    }
-
-    // --- Search & Filtering ---
-
-    @Override
-    public Page<UserResponse> searchUsers(String keyword, Pageable pageable) {
-        return (keyword == null || keyword.isBlank())
-                ? userRepository.findAll(pageable).map(UserMapper::toResponse)
-                : userRepository.searchByNameOrEmail(keyword.trim(), pageable).map(UserMapper::toResponse);
-    }
-
-    @Override
-    public Page<UserResponse> getUsersByStatus(UserStatus status, Pageable pageable) {
-        return userRepository.findByStatus(status, pageable).map(UserMapper::toResponse);
-    }
-
-    @Override
-    public Page<UserResponse> getUsersByRole(Role role, Pageable pageable) {
-        return userRepository.findByRole(role, pageable).map(UserMapper::toResponse);
     }
 }

@@ -21,11 +21,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Page<User> findByStatus(UserStatus status, Pageable pageable);
 
-    Page<User> findByRoleAndStatus(
-            Role role,
-            UserStatus status,
-            Pageable pageable
-    );
+//    Page<User> findByRoleAndStatus(
+//            Role role,
+//            UserStatus status,
+//            Pageable pageable
+//    );
 
     @Query("""
             SELECT u FROM User u
@@ -37,9 +37,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
             Pageable pageable
     );
 
-    @Query("SELECT COUNT(u) FROM User u WHERE u.status = 'ACTIVE'")
-    long countActiveUsers();
-
-    @Query("SELECT COUNT(u) FROM User u WHERE u.status = 'INACTIVE'")
-    long countInactiveUsers();
+//    @Query("SELECT COUNT(u) FROM User u WHERE u.status = 'ACTIVE'")
+//    long countActiveUsers();
+//
+//    @Query("SELECT COUNT(u) FROM User u WHERE u.status = 'INACTIVE'")
+//    long countInactiveUsers();
 }

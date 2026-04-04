@@ -15,7 +15,6 @@ public class CategoryMapper {
                 .name(category.getName())
                 .type(category.getType())
                 .active(category.isActive())
-                // Access the ID from the User relationship
                 .createdById(category.getCreatedBy() != null ? category.getCreatedBy().getId() : null)
                 .build();
     }

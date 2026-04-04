@@ -16,7 +16,7 @@ import simply.Finsight_backend.service.CustomUserDetailsService;
 import java.io.IOException;
 
 @Component
-@RequiredArgsConstructor // Automatically injects CustomUserDetailsService
+@RequiredArgsConstructor
 public class JwtTokenValidator extends OncePerRequestFilter {
 
     private final CustomUserDetailsService customUserDetailsService;
@@ -26,7 +26,7 @@ public class JwtTokenValidator extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        String header = request.getHeader("Authorization"); // Using standard header name
+        String header = request.getHeader("Authorization");
 
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
@@ -34,10 +34,8 @@ public class JwtTokenValidator extends OncePerRequestFilter {
             if (JwtTokenProvider.isTokenValid(token)) {
                 String email = JwtTokenProvider.getEmailFromToken(token);
 
-                // BEST APPROACH: Load the full UserDetails object
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
 
-                // Set userDetails as the Principal, NOT the email string
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails,

@@ -20,11 +20,11 @@ public interface FinancialRecordService {
 
     void deleteRecord(Long id, String email);
 
-    // ─── Admin Operations ─────────────────────────────────────────
+    // ─── Admin Operations ──
 
     Page<FinancialRecordResponse> getAllRecords(Pageable pageable);
 
-    // ─── User Specific Queries ────────────────────────────────────
+    // ─── User Specific Queries ────
 
     Page<FinancialRecordResponse> getRecordsByUser(String email,
             Pageable pageable);
@@ -45,7 +45,7 @@ public interface FinancialRecordService {
             LocalDate endDate,
             Pageable pageable);
 
-    // ─── Advanced Filter ──────────────────────────────────────────
+    // ─── Advanced Filter ───
 
     Page<FinancialRecordResponse> filterRecords(
             String email,

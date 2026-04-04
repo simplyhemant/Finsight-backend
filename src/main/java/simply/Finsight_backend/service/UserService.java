@@ -9,21 +9,18 @@ import simply.Finsight_backend.enums.UserStatus;
 
 public interface UserService {
 
+    // ─── Admin Operations ─────────
     Page<UserResponse> getAllUsers(Pageable pageable);
-
     UserResponse getUserById(Long userId);
-
     UserResponse updateUserStatus(Long userId, UserStatus status);
-
     UserResponse updateUserRole(Long userId, Role role);
-
-    Page<UserResponse> searchUsers(String keyword, Pageable pageable);
-
     Page<UserResponse> getUsersByStatus(UserStatus status, Pageable pageable);
-
     Page<UserResponse> getUsersByRole(Role role, Pageable pageable);
 
-    UserResponse getCurrentUserProfile(String email);
+    // ─── Search ──
+    Page<UserResponse> searchUsers(String keyword, Pageable pageable);
 
+    // ─── Profile ────────
+    UserResponse getCurrentUserProfile(String email);
     UserResponse updateCurrentUser(String email, UpdateUserRequest request);
 }

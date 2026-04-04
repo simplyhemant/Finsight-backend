@@ -18,8 +18,6 @@ import java.util.Optional;
 public interface FinancialRecordRepository
         extends JpaRepository<FinancialRecord, Long> {
 
-    // ─── Core Finders ─────────────────────────────────────────────
-
     Optional<FinancialRecord> findByIdAndDeletedFalse(Long id);
 
     Page<FinancialRecord> findAllByDeletedFalse(Pageable pageable);
@@ -27,7 +25,6 @@ public interface FinancialRecordRepository
     Page<FinancialRecord> findByCreatedBy_IdAndDeletedFalse(
             Long userId, Pageable pageable);
 
-    // ─── Master Filter ────────────────────────────────────────────
 
     @Query("""
             SELECT r FROM FinancialRecord r
@@ -48,8 +45,6 @@ public interface FinancialRecordRepository
             @Param("startDate")  LocalDate startDate,
             @Param("endDate")    LocalDate endDate,
             Pageable pageable);
-
-    // ─── Aggregations ─────────────────────────────────────────────
 
     @Query("SELECT SUM(r.amount) FROM FinancialRecord r " +
             "WHERE r.deleted = false AND r.type = 'INCOME'")

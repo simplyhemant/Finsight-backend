@@ -8,6 +8,12 @@ A robust, production-grade backend system for a financial dashboard, built with 
 Explore the complete, fully-documented API endpoints on Postman:
 👉 **[Finsight Postman API Collection](https://documenter.getpostman.com/view/39898850/2sBXiqE8qq)**
 
+## 🎥 Demo Video
+
+A quick walkthrough showcasing authentication, financial record operations, and dashboard analytics:
+
+🔗 https://www.loom.com/share/68d55531bcb8442ea1e12310f8565a6b
+
 ---
 
 ## 📑 Table of Contents

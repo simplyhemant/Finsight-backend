@@ -49,6 +49,7 @@ public class FinancialRecord {
     @Column(length = 200)
     private String description;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean deleted = false;
 

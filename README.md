@@ -2,7 +2,7 @@
 
 > **Backend Developer Intern — Assignment Submission**
 
-A robust, production-grade backend system for a financial dashboard, built with **Spring Boot 3.4.1**, **PostgreSQL 15**, and **JWT-based stateless authentication**. The system provides complete CRUD operations for financial records, role-based access control across three user tiers, and real-time aggregated dashboard analytics — all scoped to the authenticated user for data privacy.
+A robust, production-grade backend system for a financial dashboard, built with **Spring Boot 3.4.1**, **PostgreSQL 15**, and **JWT-based stateless authentication**. The system provides complete CRUD operations for financial records, role-based access control across three user tiers, and real-time aggregated dashboard analytics for enterprise data viewing.
 
 ### 🌟 Live API Documentation
 Explore the complete, fully-documented API endpoints on Postman:
@@ -88,7 +88,7 @@ The application follows a **layered architecture** with clear separation of conc
 
 **Key Design Principles:**
 - **Stateless Authentication** — JWT tokens; no server-side sessions.
-- **User Data Isolation** — All dashboard queries are scoped by the authenticated user's ID, preventing cross-user data leakage.
+- **Enterprise Dashboard** — Dashboard queries aggregate system-wide enterprise data, accessible according to RBAC.
 - **Soft Deletion** — Financial records use a `deleted` flag instead of hard deletes to preserve audit trails.
 - **DTO Pattern** — Separate Request and Response DTOs to decouple API contracts from database entities.
 
@@ -219,7 +219,7 @@ Database indexes are defined on frequently queried columns (`email`, `role`, `st
 - All users can view active categories filtered by type.
 
 ### 4. Dashboard Summary APIs ✔
-- **Total income, total expenses, net balance** — all scoped to the authenticated user.
+- **Total income, total expenses, net balance** — system-wide enterprise reporting.
 - **Category-wise totals** — grouped aggregation with record counts.
 - **Monthly trends** — month-by-month income vs. expense with net balance.
 - **Weekly trends** — week-by-week breakdown.
@@ -231,7 +231,6 @@ Database indexes are defined on frequently queried columns (`email`, `role`, `st
 - JWT-based stateless authentication via `JwtTokenValidator` filter.
 - Method-level authorization with `@PreAuthorize` annotations.
 - Custom `AccessDeniedHandler` for proper 403 JSON responses.
-- User data isolation — dashboard queries filter by `userId` at the repository level.
 
 ### 6. Validation & Error Handling ✔
 - Input validation using Hibernate Validator (`@Valid`, `@NotBlank`, `@NotNull`, `@Positive`, `@Email`).
@@ -458,7 +457,7 @@ A centralized `@ControllerAdvice` (`GlobalExceptionHandler`) catches all excepti
 
 1. **User Registration Role**: New users register as `VIEWER` by default. Only an Admin can promote them to `ANALYST` or `ADMIN`.
 2. **Soft Deletion**: Financial records are soft-deleted (`deleted = true`) instead of permanently removed. All queries explicitly filter out deleted records using `deleted = false`.
-3. **User Data Isolation**: Dashboard aggregations (totals, trends, category breakdowns) are scoped to the authenticated user's records — not system-wide. This prevents data leakage between users.
+3. **Enterprise Level Data**: Dashboard aggregations (totals, trends, category breakdowns) represent system-wide data, acting as a global company dashboard for viewers and analysts.
 4. **BigDecimal for Currency**: All monetary values use `BigDecimal(15,2)` to avoid floating-point precision errors.
 5. **Category-Type Binding**: Each category is typed as either `INCOME` or `EXPENSE`. Records must use a category that matches their transaction type.
 6. **Admin Seeding**: A default admin account (`admin@finsight.com` / `admin123`) is auto-created on first startup via `CommandLineRunner`.
@@ -481,7 +480,7 @@ A centralized `@ControllerAdvice` (`GlobalExceptionHandler`) catches all excepti
 | Database Indexing | ✅ | Indexes on frequently queried columns |
 | Docker Compose | ✅ | One-command database + PgAdmin setup |
 | Admin Auto-Seeding | ✅ | Default admin created on first run |
-| User Data Isolation | ✅ | Dashboard analytics scoped per user |
+| Global Dashboard | ✅ | Dashboard aggregates system-wide records |
 
 ---
 
@@ -499,11 +498,7 @@ A centralized `@ControllerAdvice` (`GlobalExceptionHandler`) catches all excepti
 ## 👨‍💻 Author
 
 **Hemant**
-<<<<<<< HEAD
-*Backend Developer*
-=======
 *Backend Developer Intern*
->>>>>>> adcefb4 (solve some issues)
 
 ---
 

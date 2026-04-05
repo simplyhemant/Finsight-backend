@@ -33,6 +33,7 @@ public class Category {
     @Column(nullable = false)
     private TransactionType type; // INCOME or EXPENSE
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean active = true;
 

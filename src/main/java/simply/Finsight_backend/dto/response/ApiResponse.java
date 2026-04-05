@@ -21,8 +21,7 @@ public class ApiResponse<T> {
     private String path;
     private Map<String, String> fieldErrors;
 
-    @Builder.Default
-    private LocalDateTime timestamp = LocalDateTime.now();
+    private LocalDateTime timestamp;
 
     public static <T> ApiResponse<T> success(String message, T data, int status) {
         return ApiResponse.<T>builder()

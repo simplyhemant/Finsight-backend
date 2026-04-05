@@ -9,8 +9,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import simply.Finsight_backend.dto.response.ApiResponse;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.stream.Collectors;
+import org.springframework.validation.FieldError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -33,19 +35,29 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        Map<String, String> fieldErrors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(err ->
-                fieldErrors.put(err.getField(), err.getDefaultMessage()));
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining(" and "));
+
+        // Cleanup the joined messages into the user's preferred format if both fields are missing
+        if (message.contains("Email is required") && message.contains("Password is required")) {
+            message = "Email and password are required";
+        }
 
         ApiResponse<Void> response = ApiResponse.<Void>builder()
                 .success(false)
                 .status(HttpStatus.BAD_REQUEST.value())
-                .error("Validation Error")
-                .message("Invalid input data")
-                .fieldErrors(fieldErrors)
-                .path(request.getRequestURI())
+                .error("Bad Request")
+                .message(message)
+                .timestamp(LocalDateTime.now())
                 .build();
+                
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "Bad Request", "Malformed JSON request or missing request body", request);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)

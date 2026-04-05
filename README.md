@@ -4,6 +4,10 @@
 
 A robust, production-grade backend system for a financial dashboard, built with **Spring Boot 3.4.1**, **PostgreSQL 15**, and **JWT-based stateless authentication**. The system provides complete CRUD operations for financial records, role-based access control across three user tiers, and real-time aggregated dashboard analytics — all scoped to the authenticated user for data privacy.
 
+### 🌟 Live API Documentation
+Explore the complete, fully-documented API endpoints on Postman:
+👉 **[Finsight Postman API Collection](https://documenter.getpostman.com/view/39898850/2sBXiqE8qq)**
+
 ---
 
 ## 📑 Table of Contents
@@ -280,15 +284,12 @@ On first startup, the system auto-seeds an admin account:
 
 ## 📡 API Documentation
 
-### Live Documentation
-<<<<<<< HEAD
-- **Swagger UI**: _Will be added soon._
-- **OpenAPI JSON**: _Will be added soon._
-=======
-- **Swagger UI**: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
-- **OpenAPI JSON**: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
->>>>>>> adcefb4 (solve some issues)
-- **Postman Collection**: _Will be added soon._
+### API Documentation Endpoints
+
+- **Postman Online Documentation**: [https://documenter.getpostman.com/view/39898850/2sBXiqE8qq](https://documenter.getpostman.com/view/39898850/2sBXiqE8qq)
+*(Includes request bodies, query parameters, constraints, and descriptions for all 30 routes).*
+
+To view the Swagger interface locally, run the application and visit `http://localhost:8080/swagger-ui/index.html`.
 
 ---
 

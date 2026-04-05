@@ -2,6 +2,7 @@ package simply.Finsight_backend.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +23,8 @@ import simply.Finsight_backend.repository.UserRepository;
 import simply.Finsight_backend.service.FinancialRecordService;
 
 import java.time.LocalDate;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -33,17 +35,12 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
 
-    // ─── Create Record (ADMIN only) ───────────────────────────────
-    // @PreAuthorize on controller handles role check
-    // No ownership logic needed — ADMIN manages all records
-
     private User validateAndGetActiveUser(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
         if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new BusinessException("Access Denied: Your account is currently " + user.getStatus() +
-                    ". You cannot perform financial operations.");
+            throw new BusinessException("Access Denied: Your account is " + user.getStatus());
         }
         return user;
     }
@@ -54,14 +51,14 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         User user = validateAndGetActiveUser(email);
 
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Category not found with id: " + request.getCategoryId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found ID: " + request.getCategoryId()));
+
+        if (!category.isActive()) {
+            throw new BusinessException("Category '" + category.getName() + "' is inactive.");
+        }
 
         if (category.getType() != request.getType()) {
-            throw new BusinessException(
-                    "Category '" + category.getName() + "' is of type "
-                            + category.getType() + " but record type is "
-                            + request.getType());
+            throw new BusinessException("Record type does not match Category type.");
         }
 
         FinancialRecord record = FinancialRecord.builder()
@@ -74,27 +71,17 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
                 .deleted(false)
                 .build();
 
-        return FinancialRecordMapper.toResponse(recordRepository.save(record));
+        FinancialRecord savedRecord = recordRepository.save(record);
+        return FinancialRecordMapper.toResponse(savedRecord);
     }
-
-    // ─── Get Record By ID (ANALYST + ADMIN) ───────────────────────
-    // Both roles can view any record — no ownership check needed
-    // @PreAuthorize on controller blocks VIEWER
 
     @Override
     public FinancialRecordResponse getRecordById(Long id, String email) {
         validateAndGetActiveUser(email);
-
         FinancialRecord record = recordRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Record not found with id: " + id));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Record not found"));
         return FinancialRecordMapper.toResponse(record);
     }
-
-    // ─── Update Record (ADMIN only) ───────────────────────────────
-    // @PreAuthorize on controller handles role check
-    // No ownership logic needed — ADMIN manages all records
 
     @Override
     @Transactional
@@ -102,121 +89,101 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         validateAndGetActiveUser(email);
 
         FinancialRecord record = recordRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Record not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Record not found"));
 
-        Optional.ofNullable(request.getAmount()).ifPresent(record::setAmount);
-        Optional.ofNullable(request.getType()).ifPresent(record::setType);
-        Optional.ofNullable(request.getDate()).ifPresent(record::setDate);
-        Optional.ofNullable(request.getDescription())
-                .filter(d -> !d.isBlank())
-                .ifPresent(record::setDescription);
+        if (request.getAmount() != null) {
+            record.setAmount(request.getAmount());
+        }
+        if (request.getType() != null) {
+            record.setType(request.getType());
+        }
+        if (request.getDate() != null) {
+            record.setDate(request.getDate());
+        }
+        if (request.getDescription() != null && !request.getDescription().trim().isEmpty()) {
+            record.setDescription(request.getDescription());
+        }
 
-        if (request.getCategoryId() != null
-                && !request.getCategoryId().equals(record.getCategory().getId())) {
-
+        if (request.getCategoryId() != null && !request.getCategoryId().equals(record.getCategory().getId())) {
             Category category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Category not found with id: " + request.getCategoryId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("New Category not found"));
 
-            TransactionType effectiveType = request.getType() != null ? request.getType() : record.getType();
+            TransactionType currentType = (request.getType() != null) ? request.getType() : record.getType();
 
-            if (category.getType() != effectiveType) {
-                throw new BusinessException("Category type does not match record type");
+            if (category.getType() != currentType) {
+                throw new BusinessException("New Category type does not match record type");
             }
-
             record.setCategory(category);
         }
 
         return FinancialRecordMapper.toResponse(record);
     }
 
-    // ─── Delete Record (ADMIN only) ───────────────────────────────
-    // @PreAuthorize on controller handles role check
-    // Soft delete — sets deleted = true
-
     @Override
     @Transactional
     public void deleteRecord(Long id, String email) {
         validateAndGetActiveUser(email);
-
         FinancialRecord record = recordRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Record not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Record not found"));
 
+        // Soft delete
         record.setDeleted(true);
     }
 
-    // ─── Get All Records (ADMIN only) ─────────────────────────────
-
     @Override
     public Page<FinancialRecordResponse> getAllRecords(Pageable pageable) {
-        // Note: For system-wide logs, we don't necessarily check specific ownership,
-        // but the security context typically provides the email of the Admin performing the action.
-        return recordRepository.findAllByDeletedFalse(pageable)
-                .map(FinancialRecordMapper::toResponse);
+        Page<FinancialRecord> records = recordRepository.findAllByDeletedFalse(pageable);
+        return convertToResponsePage(records, pageable);
     }
-
-    // ─── Get Records By User (ANALYST + ADMIN) ────────────────────
-    // Returns records belonging to the logged-in user
 
     @Override
     public Page<FinancialRecordResponse> getRecordsByUser(String email, Pageable pageable) {
         User user = validateAndGetActiveUser(email);
-        return recordRepository
-                .findByCreatedBy_IdAndDeletedFalse(user.getId(), pageable)
-                .map(FinancialRecordMapper::toResponse);
+        Page<FinancialRecord> records = recordRepository.findByCreatedBy_IdAndDeletedFalse(user.getId(), pageable);
+        return convertToResponsePage(records, pageable);
     }
 
-    // ─── Get Records By Type (ANALYST + ADMIN) ────────────────────
-
     @Override
-    public Page<FinancialRecordResponse> getRecordsByType(String email,
-                                                          TransactionType type,
-                                                          Pageable pageable) {
+    public Page<FinancialRecordResponse> getRecordsByType(String email, TransactionType type, Pageable pageable) {
         return filterRecords(email, null, type, null, null, null, pageable);
     }
 
-    // ─── Get Records By Category (ANALYST + ADMIN) ────────────────
-
     @Override
-    public Page<FinancialRecordResponse> getRecordsByCategory(String email,
-                                                              Long categoryId,
-                                                              Pageable pageable) {
+    public Page<FinancialRecordResponse> getRecordsByCategory(String email, Long categoryId, Pageable pageable) {
         if (!categoryRepository.existsById(categoryId)) {
-            throw new ResourceNotFoundException(
-                    "Category not found with id: " + categoryId);
+            throw new ResourceNotFoundException("Category not found");
         }
         return filterRecords(email, null, null, categoryId, null, null, pageable);
     }
 
-    // ─── Get Records By Date Range (ANALYST + ADMIN) ──────────────
-
     @Override
-    public Page<FinancialRecordResponse> getRecordsByDateRange(String email,
-                                                               LocalDate startDate,
-                                                               LocalDate endDate,
-                                                               Pageable pageable) {
-        return filterRecords(email, null, null, null, startDate, endDate, pageable);
+    public Page<FinancialRecordResponse> getRecordsByDateRange(String email, LocalDate start, LocalDate end, Pageable pageable) {
+        return filterRecords(email, null, null, null, start, end, pageable);
     }
-
-    // ─── Filter Records (ANALYST + ADMIN) ─────────────────────────
-    // All other filter methods delegate here
 
     @Override
     public Page<FinancialRecordResponse> filterRecords(String email, String keyword, TransactionType type,
                                                        Long categoryId, LocalDate startDate, LocalDate endDate,
                                                        Pageable pageable) {
-        User user = validateAndGetActiveUser(email);
+        validateAndGetActiveUser(email);
 
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new BusinessException("Start date cannot be after end date");
         }
 
-        return recordRepository.findWithUserFilters(
-                        user.getId(), keyword, type, categoryId,
-                        startDate, endDate, pageable)
-                .map(FinancialRecordMapper::toResponse);
+        Page<FinancialRecord> records = recordRepository.findWithFilters(keyword, type, categoryId, startDate, endDate, pageable);
+        return convertToResponsePage(records, pageable);
     }
 
+    private Page<FinancialRecordResponse> convertToResponsePage(Page<FinancialRecord> page, Pageable pageable) {
+        List<FinancialRecordResponse> responseList = new ArrayList<>();
+
+        // Traditional for-each loop
+        for (FinancialRecord record : page.getContent()) {
+            FinancialRecordResponse response = FinancialRecordMapper.toResponse(record);
+            responseList.add(response);
+        }
+
+        return new PageImpl<>(responseList, pageable, page.getTotalElements());
+    }
 }

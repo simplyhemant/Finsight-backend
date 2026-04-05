@@ -281,8 +281,13 @@ On first startup, the system auto-seeds an admin account:
 ## 📡 API Documentation
 
 ### Live Documentation
+<<<<<<< HEAD
 - **Swagger UI**: _Will be added soon._
 - **OpenAPI JSON**: _Will be added soon._
+=======
+- **Swagger UI**: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+- **OpenAPI JSON**: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+>>>>>>> adcefb4 (solve some issues)
 - **Postman Collection**: _Will be added soon._
 
 ---
@@ -493,7 +498,11 @@ A centralized `@ControllerAdvice` (`GlobalExceptionHandler`) catches all excepti
 ## 👨‍💻 Author
 
 **Hemant**
+<<<<<<< HEAD
 *Backend Developer*
+=======
+*Backend Developer Intern*
+>>>>>>> adcefb4 (solve some issues)
 
 ---
 

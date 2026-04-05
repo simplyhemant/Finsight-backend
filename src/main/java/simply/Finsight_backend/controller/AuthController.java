@@ -74,19 +74,42 @@ public class AuthController {
                 .ok(ApiResponse.success("Profile fetched successfully", response, HttpStatus.OK.value()));
     }
 
-    @Operation(summary = "Change password", description = "Updates the password for the currently authenticated user.")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Password changed successfully")
+//    @Operation(summary = "Change password", description = "Updates the password for the currently authenticated user.")
+//    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Password changed successfully")
+//    @PutMapping("/change-password")
+//    public ResponseEntity<ApiResponse<Void>> changePassword(
+//            @AuthenticationPrincipal CustomUserDetails currentUser,
+//            @Valid @RequestBody ChangePasswordRequest request) {
+//
+//        log.info("Password change initiated for user: {}", currentUser.getUsername());
+//        authService.changePassword(currentUser.getUsername(), request);
+//
+//        log.info("Password changed successfully for user: {}", currentUser.getUsername());
+//        return ResponseEntity
+//                .ok(ApiResponse.success("Password changed successfully", null, HttpStatus.OK.value()));
+//    }
+
     @PutMapping("/change-password")
     public ResponseEntity<ApiResponse<Void>> changePassword(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody ChangePasswordRequest request) {
 
-        log.info("Password change initiated for user: {}", currentUser.getUsername());
+        if (currentUser == null) {
+            log.warn("Unauthorized password change attempt");
+            // FIXED: Matches the 4 arguments: (int status, String error, String message, String path)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(
+                            HttpStatus.UNAUTHORIZED.value(),
+                            "Unauthorized",
+                            "User must be logged in to change password",
+                            "/api/auth/change-password"
+                    ));
+        }
+
+        log.info("Changing password for user: {}", currentUser.getUsername());
         authService.changePassword(currentUser.getUsername(), request);
 
-        log.info("Password changed successfully for user: {}", currentUser.getUsername());
-        return ResponseEntity
-                .ok(ApiResponse.success("Password changed successfully", null, HttpStatus.OK.value()));
+        return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null, HttpStatus.OK.value()));
     }
 
     @Operation(summary = "Logout user", description = "Handles user logout. Note: Client must discard the JWT token.")

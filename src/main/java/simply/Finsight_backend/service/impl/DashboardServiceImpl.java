@@ -31,11 +31,11 @@ public class DashboardServiceImpl implements DashboardService {
     private final FinancialRecordRepository recordRepository;
     private final UserRepository userRepository;
 
-    // ─── Get Summary ──────────────────────────────────────────────
+    // --- Get Summary ----
 
     @Override
-    public DashboardSummaryResponse getSummary() {
-        log.info("Generating dashboard summary data...");
+    public DashboardSummaryResponse getSummary(Long userId) {
+        log.info("Generating dashboard summary data for user: {}", userId);
         validateUserStatus();
 
         BigDecimal totalIncome = nullSafe(recordRepository.getTotalIncome());
@@ -56,21 +56,21 @@ public class DashboardServiceImpl implements DashboardService {
                 .build();
     }
 
-    // ─── Get Category Wise Totals ─────────────────────────────────
+    //---- Get Category Wise Totals ----
 
     @Override
-    public List<CategoryTotalResponse> getCategoryWiseTotals() {
-        log.info("Fetching category-wise totals...");
+    public List<CategoryTotalResponse> getCategoryWiseTotals(Long userId) {
+        log.info("Fetching category-wise totals for user: {}", userId);
         validateUserStatus();
         return mapToCategoryTotalResponse(recordRepository.getCategoryWiseTotals());
     }
 
     @Override
-    public List<CategoryTotalResponse> getCategoryWiseTotalsByType(TransactionType type) {
-        log.info("Filtering category totals by type: {}", type);
+    public List<CategoryTotalResponse> getCategoryWiseTotalsByType(TransactionType type, Long userId) {
+        log.info("Filtering category totals by type: {} for user: {}", type, userId);
         validateUserStatus();
 
-        List<CategoryTotalResponse> allTotals = getCategoryWiseTotals();
+        List<CategoryTotalResponse> allTotals = getCategoryWiseTotals(userId);
         List<CategoryTotalResponse> filteredList = new ArrayList<>();
 
         // Simplified Loop instead of Stream
@@ -82,11 +82,10 @@ public class DashboardServiceImpl implements DashboardService {
         return filteredList;
     }
 
-    // ─── Get Monthly Trends ───────────────────────────────────────
-
+    // Get Monthly Trends --
     @Override
-    public List<MonthlyTrendResponse> getMonthlyTrends(int year) {
-        log.info("Calculating monthly trends for year: {}", year);
+    public List<MonthlyTrendResponse> getMonthlyTrends(int year, Long userId) {
+        log.info("Calculating monthly trends for year: {} for user: {}", year, userId);
         validateUserStatus();
 
         List<Object[]> results = recordRepository.getMonthlyTrendsByYear(year);
@@ -126,11 +125,10 @@ public class DashboardServiceImpl implements DashboardService {
         return sortedList;
     }
 
-    // ─── Get Weekly Trends ────────────────────────────────────────
-
+    // =-- Get Weekly Trends ----
     @Override
-    public List<WeeklyTrendResponse> getWeeklyTrends(int year) {
-        log.info("Calculating weekly trends for year: {}", year);
+    public List<WeeklyTrendResponse> getWeeklyTrends(int year, Long userId) {
+        log.info("Calculating weekly trends for year: {} for user: {}", year, userId);
         validateUserStatus();
 
         List<Object[]> results = recordRepository.getWeeklyTrendsByYear(year);
@@ -169,11 +167,11 @@ public class DashboardServiceImpl implements DashboardService {
         return sortedList;
     }
 
-    // ─── Get Recent Activity ──────────────────────────────────────
+    // --- Get Recent Activity -----
 
     @Override
-    public List<RecentActivityResponse> getRecentActivity(int limit) {
-        log.info("Fetching {} most recent activity records", limit);
+    public List<RecentActivityResponse> getRecentActivity(int limit, Long userId) {
+        log.info("Fetching {} most recent activity records for user: {}", limit, userId);
         validateUserStatus();
 
         int safeLimit = Math.min(limit, 50);
@@ -200,29 +198,29 @@ public class DashboardServiceImpl implements DashboardService {
         return responseList;
     }
 
-    // ─── Top Categories ───────────────────────────────────────────
+    // ---Top Categories ---
 
     @Override
-    public List<CategoryTotalResponse> getTopExpenseCategories(int limit) {
-        log.info("Fetching top {} expense categories", limit);
+    public List<CategoryTotalResponse> getTopExpenseCategories(int limit, Long userId) {
+        log.info("Fetching top {} expense categories for user: {}", limit, userId);
         validateUserStatus();
         int safeLimit = Math.min(limit, 20);
         return mapToTopCategoryResponse(recordRepository.getTopExpenseCategories(PageRequest.of(0, safeLimit)), TransactionType.EXPENSE);
     }
 
     @Override
-    public List<CategoryTotalResponse> getTopIncomeCategories(int limit) {
-        log.info("Fetching top {} income categories", limit);
+    public List<CategoryTotalResponse> getTopIncomeCategories(int limit, Long userId) {
+        log.info("Fetching top {} income categories for user: {}", limit, userId);
         validateUserStatus();
         int safeLimit = Math.min(limit, 20);
         return mapToTopCategoryResponse(recordRepository.getTopIncomeCategories(PageRequest.of(0, safeLimit)), TransactionType.INCOME);
     }
 
-    // ─── Summary By Date Range ────────────────────────────────────
+    // --- Summary By Date Range
 
     @Override
-    public DashboardSummaryResponse getSummaryByDateRange(LocalDate startDate, LocalDate endDate) {
-        log.info("Fetching summary for range: {} to {}", startDate, endDate);
+    public DashboardSummaryResponse getSummaryByDateRange(LocalDate startDate, LocalDate endDate, Long userId) {
+        log.info("Fetching summary for range: {} to {} for user: {}", startDate, endDate, userId);
         validateUserStatus();
 
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
@@ -233,15 +231,22 @@ public class DashboardServiceImpl implements DashboardService {
         BigDecimal income = nullSafe(recordRepository.getTotalByTypeAndDateRange(TransactionType.INCOME.name(), startDate, endDate));
         BigDecimal expense = nullSafe(recordRepository.getTotalByTypeAndDateRange(TransactionType.EXPENSE.name(), startDate, endDate));
 
+        long countAll = recordRepository.countByDateRange(startDate, endDate);
+        long countIncome = recordRepository.countByTypeAndDateRange(TransactionType.INCOME.name(), startDate, endDate);
+        long countExpense = recordRepository.countByTypeAndDateRange(TransactionType.EXPENSE.name(), startDate, endDate);
+
         return DashboardSummaryResponse.builder()
                 .totalIncome(income)
                 .totalExpense(expense)
                 .netBalance(income.subtract(expense))
+                .totalRecords(countAll)
+                .totalIncomeRecords(countIncome)
+                .totalExpenseRecords(countExpense)
                 .lastUpdated(LocalDateTime.now())
                 .build();
     }
 
-    // ─── Private Helpers methods ────
+    // --- Private Helpers methods ----
 
     private void validateUserStatus() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();

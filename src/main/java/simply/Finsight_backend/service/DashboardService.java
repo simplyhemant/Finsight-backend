@@ -12,24 +12,25 @@ import java.util.List;
 
 public interface DashboardService {
 
-    DashboardSummaryResponse getSummary();
+    DashboardSummaryResponse getSummary(Long userId);
 
     // ─── Category Totals ───
-    List<CategoryTotalResponse> getCategoryWiseTotals();
-    List<CategoryTotalResponse> getCategoryWiseTotalsByType(TransactionType type);
+    List<CategoryTotalResponse> getCategoryWiseTotals(Long userId);
+    List<CategoryTotalResponse> getCategoryWiseTotalsByType(TransactionType type, Long userId);
 
     // ─── Trends ───
-    List<MonthlyTrendResponse> getMonthlyTrends(int year);
-    List<WeeklyTrendResponse>  getWeeklyTrends(int year);
+    List<MonthlyTrendResponse> getMonthlyTrends(int year, Long userId);
+    List<WeeklyTrendResponse>  getWeeklyTrends(int year, Long userId);
 
     // ─── Recent Activity ──
-    List<RecentActivityResponse> getRecentActivity(int limit);
+    List<RecentActivityResponse> getRecentActivity(int limit, Long userId);
 
     // ─── Top Categories ───
-    List<CategoryTotalResponse> getTopExpenseCategories(int limit);
-    List<CategoryTotalResponse> getTopIncomeCategories(int limit);
+    List<CategoryTotalResponse> getTopExpenseCategories(int limit, Long userId);
+    List<CategoryTotalResponse> getTopIncomeCategories(int limit, Long userId);
 
     // ─── Date Range Summary ────
     DashboardSummaryResponse getSummaryByDateRange(LocalDate startDate,
-                                                   LocalDate endDate);
+                                                   LocalDate endDate,
+                                                   Long userId);
 }

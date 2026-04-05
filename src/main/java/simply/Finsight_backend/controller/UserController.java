@@ -22,6 +22,7 @@ import simply.Finsight_backend.dto.response.ApiResponse;
 import simply.Finsight_backend.dto.response.UserResponse;
 import simply.Finsight_backend.enums.Role;
 import simply.Finsight_backend.enums.UserStatus;
+import simply.Finsight_backend.service.CustomUserDetails;
 import simply.Finsight_backend.service.UserService;
 
 @RestController
@@ -147,39 +148,6 @@ public class UserController {
                 users, HttpStatus.OK.value()));
     }
 
-   //  --- normal oepreation ---
-
-    @Operation(summary = "Get own profile",
-            description = "Get logged-in user's profile.")
-    @GetMapping("/profile")
-    public ResponseEntity<ApiResponse<UserResponse>> getMyProfile(
-            @AuthenticationPrincipal String email) {
-
-        log.info("Fetching profile for: {}", email);
-        UserResponse user = userService.getCurrentUserProfile(email);
-
-        return ResponseEntity.ok(ApiResponse.success(
-                "Profile fetched successfully",
-                user, HttpStatus.OK.value()));
-    }
-
-    @Operation(summary = "Update own profile",
-            description = "Update logged-in user's profile.")
-    @PutMapping("/profile")
-    public ResponseEntity<ApiResponse<UserResponse>> updateMyProfile(
-            @AuthenticationPrincipal String email,
-            @Valid @RequestBody UpdateUserRequest request) {
-
-        log.info("Updating profile for: {}", email);
-        UserResponse user = userService.updateCurrentUser(email, request);
-
-        return ResponseEntity.ok(ApiResponse.success(
-                "Profile updated successfully",
-                user, HttpStatus.OK.value()));
-    }
-
-    // --- admin
-
     @Operation(summary = "Search users",
             description = "Search by name or email keyword. ADMIN only.")
     @GetMapping("/search")
@@ -198,4 +166,53 @@ public class UserController {
                 "Search results fetched successfully",
                 users, HttpStatus.OK.value()));
     }
+
+   //  --- normal oepreation ---
+
+
+    @Operation(summary = "Get own profile",
+            description = "Get logged-in user's profile.")
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse<UserResponse>> getMyProfile(
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+
+        log.info("Fetching profile for authenticated user: {}", currentUser.getUsername());
+        UserResponse response = userService.getCurrentUserProfile(currentUser.getUsername());
+
+        log.info("Profile fetched successfully for: {}", currentUser.getUsername());
+        return ResponseEntity
+                .ok(ApiResponse.success("Profile fetched successfully", response, HttpStatus.OK.value()));
+    }
+
+//    @Operation(summary = "Get own profile",
+//            description = "Get logged-in user's profile.")
+//    @GetMapping("/profile")
+//    public ResponseEntity<ApiResponse<UserResponse>> getMyProfile(
+//            @AuthenticationPrincipal String email) {
+//
+//        log.info("Fetching profile for: {}", email);
+//        UserResponse user = userService.getCurrentUserProfile(email);
+//
+//        return ResponseEntity.ok(ApiResponse.success(
+//                "Profile fetched successfully",
+//                user, HttpStatus.OK.value()));
+//    }
+
+
+    @Operation(summary = "Update own profile",
+            description = "Update logged-in user's profile.")
+    @PutMapping("/profile")
+    public ResponseEntity<ApiResponse<UserResponse>> updateMyProfile(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody UpdateUserRequest request) {
+
+        log.info("Updating profile for: {}", currentUser);
+
+        UserResponse user = userService.updateCurrentUser(currentUser.getUsername(), request);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Profile updated successfully",
+                user, HttpStatus.OK.value()));
+    }
+
 }

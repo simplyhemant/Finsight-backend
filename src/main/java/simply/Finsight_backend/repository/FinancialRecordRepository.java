@@ -28,8 +28,7 @@ public interface FinancialRecordRepository
 
     @Query("""
             SELECT r FROM FinancialRecord r
-            WHERE r.createdBy.id = :userId
-            AND r.deleted = false
+            WHERE r.deleted = false
             AND (CAST(:type AS string) IS NULL OR r.type = :type)
             AND (CAST(:categoryId AS long) IS NULL OR r.category.id = :categoryId)
             AND (CAST(:startDate AS localdate) IS NULL OR r.date >= :startDate)
@@ -37,8 +36,7 @@ public interface FinancialRecordRepository
             AND (CAST(:keyword AS string) IS NULL OR LOWER(r.description)
                  LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
             """)
-    Page<FinancialRecord> findWithUserFilters(
-            @Param("userId")     Long userId,
+    Page<FinancialRecord> findWithFilters(
             @Param("keyword")    String keyword,
             @Param("type")       TransactionType type,
             @Param("categoryId") Long categoryId,
@@ -54,7 +52,6 @@ public interface FinancialRecordRepository
             "WHERE r.deleted = false AND r.type = 'EXPENSE'")
     BigDecimal getTotalExpense();
 
-    // FIXED — param names match service calls (startDate/endDate)
     @Query(value = """
     SELECT COALESCE(SUM(amount), 0)
     FROM financial_records
@@ -65,6 +62,30 @@ public interface FinancialRecordRepository
     """, nativeQuery = true)
     BigDecimal getTotalByTypeAndDateRange(
             @Param("type")      String type,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate")   LocalDate endDate);
+
+    @Query(value = """
+    SELECT COUNT(*)
+    FROM financial_records
+    WHERE deleted = false
+    AND type = :type
+    AND (CAST(:startDate AS date) IS NULL OR date >= CAST(:startDate AS date))
+    AND (CAST(:endDate AS date) IS NULL OR date <= CAST(:endDate AS date))
+    """, nativeQuery = true)
+    long countByTypeAndDateRange(
+            @Param("type")      String type,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate")   LocalDate endDate);
+
+    @Query(value = """
+    SELECT COUNT(*)
+    FROM financial_records
+    WHERE deleted = false
+    AND (CAST(:startDate AS date) IS NULL OR date >= CAST(:startDate AS date))
+    AND (CAST(:endDate AS date) IS NULL OR date <= CAST(:endDate AS date))
+    """, nativeQuery = true)
+    long countByDateRange(
             @Param("startDate") LocalDate startDate,
             @Param("endDate")   LocalDate endDate);
 

@@ -1,6 +1,5 @@
 # Finsight — Finance Data Processing and Access Control Backend
 
-> **Backend Developer Intern — Assignment Submission**
 
 A robust, production-grade backend system for a financial dashboard, built with **Spring Boot 3.4.1**, **PostgreSQL 15**, and **JWT-based stateless authentication**. The system provides complete CRUD operations for financial records, role-based access control across three user tiers, and real-time aggregated dashboard analytics for enterprise data viewing.
 
@@ -504,8 +503,6 @@ A centralized `@ControllerAdvice` (`GlobalExceptionHandler`) catches all excepti
 ## 👨‍💻 Author
 
 **Hemant**
-*Backend Developer Intern*
+*Backend Developer*
 
 ---
-
-> **Note**: This project was built as an assignment submission for the Backend Developer Intern position. The focus was on clean architecture, correct business logic, and demonstrating sound backend engineering practices rather than building a production-ready system.
